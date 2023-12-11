@@ -1,0 +1,60 @@
+FROM ubuntu:20.04
+
+LABEL Author="Haflidi Fridthjofsson"
+LABEL GitHub="https://github.com/haflidif"
+LABEL BaseImage="ubuntu:20.04"
+
+# To make it easier for build and release pipelines to run apt-get,
+# configure apt to not require confirmation (assume the -y argument by default)
+ENV DEBIAN_FRONTEND=noninteractive
+
+RUN echo "APT::Get::Assume-Yes \"true\";" > /etc/apt/apt.conf.d/90assumeyes
+
+RUN apt-get update
+RUN apt-get upgrade -y && useradd -m agentuser
+
+RUN apt-get update && apt-get install -y -qq --no-install-recommends \
+        ca-certificates \
+        curl \
+        git \
+        iputils-ping \
+        jq \
+        libcurl4 \
+        libicu66 \
+        libunwind8 \
+        netcat \
+        libssl1.1 \
+        libuuid1 \
+        liblttng-ust0 \
+        lsb-release \
+        vim \
+        wget \
+        zip \
+        apt-transport-https \
+        apt-utils \
+        gnupg \
+        software-properties-common
+
+RUN curl -sL https://aka.ms/InstallAzureCLIDeb | bash
+
+# Install PowerShell
+RUN curl https://packages.microsoft.com/keys/microsoft.asc | apt-key add - \
+    && curl https://packages.microsoft.com/config/ubuntu/$(lsb_release -rs)/prod.list -o /etc/apt/sources.list.d/microsoft-prod.list \
+    && apt-get update \
+    && apt-get install -y --no-install-recommends \
+        powershell \
+    && rm -rf /var/lib/apt/lists/*
+
+# Can be 'linux-x64', 'linux-arm64', 'linux-arm', 'rhel.6-x64'.
+ENV TARGETARCH=linux-x64
+
+WORKDIR /azp
+RUN chown -R agentuser:agentuser /azp
+RUN chmod 755 /azp
+
+COPY ./start.sh .
+RUN chmod +x start.sh
+# All subsequent actions will be performed as the agentuser
+USER agentuser
+
+ENTRYPOINT [ "./start.sh" ]

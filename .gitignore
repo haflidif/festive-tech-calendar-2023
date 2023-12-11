@@ -1,0 +1,7 @@
+# Ignoring files before publishing to GitHub public repo
+
+# Ignoring bicepparam files
+*.bicepparam
+
+# Ignoring bicep-deploy.ps1 file
+bicep-deploy.ps1
