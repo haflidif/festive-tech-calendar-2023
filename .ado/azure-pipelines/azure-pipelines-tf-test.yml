@@ -4,7 +4,7 @@ trigger: none
 pr: none
   
 pool:
-  name: dryrun-containerapp-adoagent
+  name: <REPLACE WITH YOUR AGENT POOL> # Add Agent Pool
 
 variables:
   - group: "terraform"
@@ -45,14 +45,14 @@ stages:
               command: "init"
               backendType: "azurerm"
               workingDirectory: "$(workingDirectory)"
-              backendServiceArm: "" # Add Service Connection
+              backendServiceArm: "<REPLACE WITH YOUR SERVICE CONNECTION>" # Add Service Connection
               commandOptions: $(tfinitcommands)
 
           - task: TerraformCLI@1
             displayName: "Run > terraform validate"
             inputs:
               command: "validate"
-              environmentServiceName: "sc-dryrun-festive-tech-2023" # Add Service Connection
+              environmentServiceName: "<REPLACE WITH YOUR SERVICE CONNECTION>" # Add Service Connection
               workingDirectory: "$(workingDirectory)"
 
           - task: TerraformCLI@1
@@ -62,7 +62,7 @@ stages:
 
             inputs:
               command: "plan"
-              environmentServiceName: "sc-dryrun-festive-tech-2023" # Add Service Connection ## Service Connection
+              environmentServiceName: "<REPLACE WITH YOUR SERVICE CONNECTION>" # Add Service Connection ## Service Connection
               workingDirectory: "$(workingDirectory)"
               publishPlanResults: "terraform_plan"
               commandOptions: $(tfplancommands)
@@ -70,7 +70,7 @@ stages:
           - task: TerraformCLI@1
             inputs:
               command: "show"
-              environmentServiceName: "sc-dryrun-festive-tech-2023" # Add Service Connection ## Service Connection
+              environmentServiceName: "<REPLACE WITH YOUR SERVICE CONNECTION>" # Add Service Connection ## Service Connection
               workingDirectory: "$(workingDirectory)"
               inputTargetPlanOrStateFilePath: "./terraform_plan.tfplan"
             displayName: "Run > terraform show"
@@ -126,7 +126,7 @@ stages:
                 - task: ExtractFiles@1
                   displayName: "Extract Plan Artifact"
                   inputs:
-                    archiveFilePatterns: "$(Pipeline.Workspace)/plan-artifact.tgz"
+                    archiveFilePatterns: "$(Pipeline.Workspace)/plan-artifact/$(Build.BuildNumber).tgz"
                     destinationFolder: "$(workingDirectory)"
                     cleanDestinationFolder: false
                     overwriteExistingFiles: true
@@ -140,6 +140,6 @@ stages:
                   displayName: "Run > terraform apply"
                   inputs:
                     command: "apply"
-                    environmentServiceName: "sc-dryrun-festive-tech-2023" # Add Service Connection
+                    environmentServiceName: "<REPLACE WITH YOUR SERVICE CONNECTION>" # Add Service Connection
                     workingDirectory: '$(workingDirectory)'
                     commandOptions: $(tfapplycommands)
