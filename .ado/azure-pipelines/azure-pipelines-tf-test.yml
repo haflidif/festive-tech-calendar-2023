@@ -33,12 +33,12 @@ stages:
               echo "$(workingDirectory)"
               ls -l "$(workingDirectory)"
 
-          - task: charleszipp.azure-pipelines-tasks-terraform.azure-pipelines-tasks-terraform-installer.TerraformInstaller@0
+          - task: TerraformInstaller@1
             displayName: "Install > terraform"
             inputs:
               terraformVersion: $(tfversion)
 
-          - task: charleszipp.azure-pipelines-tasks-terraform.azure-pipelines-tasks-terraform-cli.TerraformCLI@0
+          - task: TerraformCLI@1
             condition: succeeded()
             displayName: "Run > terraform init"
             inputs:
@@ -48,14 +48,14 @@ stages:
               backendServiceArm: "" # Add Service Connection
               commandOptions: $(tfinitcommands)
 
-          - task: charleszipp.azure-pipelines-tasks-terraform.azure-pipelines-tasks-terraform-cli.TerraformCLI@0
+          - task: TerraformCLI@1
             displayName: "Run > terraform validate"
             inputs:
               command: "validate"
               environmentServiceName: "sc-dryrun-festive-tech-2023" # Add Service Connection
               workingDirectory: "$(workingDirectory)"
 
-          - task: charleszipp.azure-pipelines-tasks-terraform.azure-pipelines-tasks-terraform-cli.TerraformCLI@0
+          - task: TerraformCLI@1
             name: "plan"
             condition: succeeded()
             displayName: "Run > terraform plan"
@@ -67,7 +67,7 @@ stages:
               publishPlanResults: "terraform_plan"
               commandOptions: $(tfplancommands)
 
-          - task: charleszipp.azure-pipelines-tasks-terraform.azure-pipelines-tasks-terraform-cli.TerraformCLI@0
+          - task: TerraformCLI@1
             inputs:
               command: "show"
               environmentServiceName: "sc-dryrun-festive-tech-2023" # Add Service Connection ## Service Connection
@@ -131,12 +131,12 @@ stages:
                     cleanDestinationFolder: false
                     overwriteExistingFiles: true
                 
-                - task: charleszipp.azure-pipelines-tasks-terraform.azure-pipelines-tasks-terraform-installer.TerraformInstaller@0
+                - task: TerraformInstaller@1
                   displayName: "Install > terraform"
                   inputs:
                     terraformVersion: $(tfversion)
 
-                - task: charleszipp.azure-pipelines-tasks-terraform.azure-pipelines-tasks-terraform-cli.TerraformCLI@0
+                - task: TerraformCLI@1
                   displayName: "Run > terraform apply"
                   inputs:
                     command: "apply"
