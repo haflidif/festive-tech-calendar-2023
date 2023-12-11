@@ -6,7 +6,7 @@ trigger: none
 pr: none
 
 pool:
-  name: dryrun-containerapp-adoagent
+  name: <REPLACE WITH YOUR AGENT POOL>
 
 stages:
 - stage: test
@@ -16,7 +16,7 @@ stages:
     - task: AzureCLI@2
       name: testing_az_cli
       inputs:
-        azureSubscription: 'sc-wl-azspons'
+        azureSubscription: '<REPLACE WITH YOUR SERVICE CONNECTION>'
         scriptType: bash
         scriptLocation: inlineScript
         inlineScript:
