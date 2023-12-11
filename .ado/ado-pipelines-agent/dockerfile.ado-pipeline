@@ -14,6 +14,8 @@ RUN apt-get update
 RUN apt-get upgrade -y && useradd -m agentuser
 
 RUN apt-get update && apt-get install -y -qq --no-install-recommends \
+        apt-transport-https \
+        apt-utils \
         ca-certificates \
         curl \
         git \
@@ -29,9 +31,8 @@ RUN apt-get update && apt-get install -y -qq --no-install-recommends \
         lsb-release \
         vim \
         wget \
+        unzip \
         zip \
-        apt-transport-https \
-        apt-utils \
         gnupg \
         software-properties-common
 
