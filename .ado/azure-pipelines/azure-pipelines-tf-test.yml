@@ -1,0 +1,145 @@
+trigger: none
+  
+# Don't run against PRs
+pr: none
+  
+pool:
+  name: dryrun-containerapp-adoagent
+
+variables:
+  - group: "terraform"
+  - name: "workingDirectory"
+    value: "$(Build.SourcesDirectory)/iac/terraform"
+
+stages:
+  - stage: tfbuild
+    displayName: "Terraform Install, Init, Validate & Plan"
+    jobs:
+      - job: "Build_TF_PLAN"
+        displayName: "Terraform > install, init, validate & Plan"
+        continueOnError: false
+        variables:
+          - name: "tfinitcommands"
+            value: "-backend-config=resource_group_name=$(resource_group_name) -backend-config=storage_account_name=$(storage_account_name) -backend-config=container_name=$(container_name) -backend-config=key=$(key_name) -backend-config=use_azuread_auth=$(useAzureADAuth)"
+          - name: "tfplancommands"
+            value: "-var-file=./main.tfvars -out=./terraform_plan.tfplan -input=false -detailed-exitcode"
+
+        steps:
+          - checkout: self
+
+          - script: |
+              echo "Structure of work folder of this pipeline:"
+              echo "$(Build.SourcesDirectory)"
+              echo "$(workingDirectory)"
+              ls -l "$(workingDirectory)"
+
+          - task: charleszipp.azure-pipelines-tasks-terraform.azure-pipelines-tasks-terraform-installer.TerraformInstaller@0
+            displayName: "Install > terraform"
+            inputs:
+              terraformVersion: $(tfversion)
+
+          - task: charleszipp.azure-pipelines-tasks-terraform.azure-pipelines-tasks-terraform-cli.TerraformCLI@0
+            condition: succeeded()
+            displayName: "Run > terraform init"
+            inputs:
+              command: "init"
+              backendType: "azurerm"
+              workingDirectory: "$(workingDirectory)"
+              backendServiceArm: "" # Add Service Connection
+              commandOptions: $(tfinitcommands)
+
+          - task: charleszipp.azure-pipelines-tasks-terraform.azure-pipelines-tasks-terraform-cli.TerraformCLI@0
+            displayName: "Run > terraform validate"
+            inputs:
+              command: "validate"
+              environmentServiceName: "sc-dryrun-festive-tech-2023" # Add Service Connection
+              workingDirectory: "$(workingDirectory)"
+
+          - task: charleszipp.azure-pipelines-tasks-terraform.azure-pipelines-tasks-terraform-cli.TerraformCLI@0
+            name: "plan"
+            condition: succeeded()
+            displayName: "Run > terraform plan"
+
+            inputs:
+              command: "plan"
+              environmentServiceName: "sc-dryrun-festive-tech-2023" # Add Service Connection ## Service Connection
+              workingDirectory: "$(workingDirectory)"
+              publishPlanResults: "terraform_plan"
+              commandOptions: $(tfplancommands)
+
+          - task: charleszipp.azure-pipelines-tasks-terraform.azure-pipelines-tasks-terraform-cli.TerraformCLI@0
+            inputs:
+              command: "show"
+              environmentServiceName: "sc-dryrun-festive-tech-2023" # Add Service Connection ## Service Connection
+              workingDirectory: "$(workingDirectory)"
+              inputTargetPlanOrStateFilePath: "./terraform_plan.tfplan"
+            displayName: "Run > terraform show"
+
+          - task: ArchiveFiles@2
+            displayName: "Create Plan Artifact"
+            inputs:
+              rootFolderOrFile: "$(workingDirectory)"
+              includeRootFolder: false
+              archiveType: "tar"
+              tarCompression: "gz"
+              archiveFile: "$(Build.ArtifactStagingDirectory)/$(Build.BuildNumber).tgz"
+              replaceExistingArchive: true
+
+          - task: PublishPipelineArtifact@1
+            displayName: "Publish Plan Artifact"
+            inputs:
+              targetPath: "$(Build.ArtifactStagingDirectory)"
+              artifactName: "plan-artifact"
+
+  - stage: tfapply
+    displayName: "Terraform apply"
+    dependsOn: tfbuild
+    condition: succeeded()
+    jobs:
+      - job: "waitForValidation"
+        displayName: "Wait > Wait for manual appoval"
+        pool: "server"
+        timeoutInMinutes: "4320" # job times out in 3 days
+        steps:
+          - task: ManualValidation@0
+            timeoutInMinutes: "1440" # task times out in 1 day
+            inputs:
+              notifyUsers: |
+                someone@example.com
+              instructions: "Validate the Terraform Plan for deployment"
+              onTimeout: "reject"
+
+      - deployment: "TerraformApprove"
+        displayName: "Terraform > install, init & apply"
+        dependsOn: "waitForValidation"
+        environment: terraform
+        variables:
+          - name: "tfinitcommands"
+            value: "-backend-config=resource_group_name=$(resource_group_name) -backend-config=storage_account_name=$(storage_account_name) -backend-config=container_name=$(container_name) -backend-config=key=$(key_name) -backend-config=use_azuread_auth=$(useAzureADAuth)"
+          - name: "tfapplycommands"
+            value: "-input=false ./terraform_plan.tfplan"
+        strategy:
+          runOnce:
+            deploy:
+              steps:
+                # Getting Terraform Plan Artifacts.     
+                - task: ExtractFiles@1
+                  displayName: "Extract Plan Artifact"
+                  inputs:
+                    archiveFilePatterns: "$(Pipeline.Workspace)/plan-artifact.tgz"
+                    destinationFolder: "$(workingDirectory)"
+                    cleanDestinationFolder: false
+                    overwriteExistingFiles: true
+                
+                - task: charleszipp.azure-pipelines-tasks-terraform.azure-pipelines-tasks-terraform-installer.TerraformInstaller@0
+                  displayName: "Install > terraform"
+                  inputs:
+                    terraformVersion: $(tfversion)
+
+                - task: charleszipp.azure-pipelines-tasks-terraform.azure-pipelines-tasks-terraform-cli.TerraformCLI@0
+                  displayName: "Run > terraform apply"
+                  inputs:
+                    command: "apply"
+                    environmentServiceName: "sc-dryrun-festive-tech-2023" # Add Service Connection
+                    workingDirectory: '$(workingDirectory)'
+                    commandOptions: $(tfapplycommands)
