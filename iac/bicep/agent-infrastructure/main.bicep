@@ -58,6 +58,7 @@ resource containerappvnet 'Microsoft.Network/virtualNetworks@2023-05-01' = {
   }
 }
 
+// Defining Log Analytics Workspace for gathering logs from the Container App Environment.
 resource law 'Microsoft.OperationalInsights/workspaces@2022-10-01' = {
   name: '${lawName}-${(uniqueString(resourceGroup().id))}'
   location: location
