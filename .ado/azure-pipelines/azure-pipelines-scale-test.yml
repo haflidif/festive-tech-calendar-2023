@@ -1,0 +1,33 @@
+# Build-test pipeline for Azure DevOps.
+
+trigger: none
+
+# Don't run against PRs
+pr: none
+
+pool:
+  name: dryrun-containerapp-adoagent
+
+stages:
+- stage: test
+  jobs:
+  - job: run_tests
+    steps:
+    - task: AzureCLI@2
+      name: testing_az_cli
+      inputs:
+        azureSubscription: 'sc-wl-azspons'
+        scriptType: bash
+        scriptLocation: inlineScript
+        inlineScript:
+          az --version
+          az account show
+    
+    - task: PowerShell@2
+      name: test_pwsh
+      inputs:
+        pwsh: true
+        targetType: inline
+        script: |
+          Write-host "Testing PowerShell"
+          $PSVersionTable
