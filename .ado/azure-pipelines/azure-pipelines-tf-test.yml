@@ -1,5 +1,7 @@
+# Terraform Build pipeline for Azure DevOps.
+
 trigger: none
-  
+
 # Don't run against PRs
 pr: none
   
