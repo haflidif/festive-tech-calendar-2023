@@ -108,7 +108,7 @@ To test the environment, follow these steps:
 | userAzureADAuth | `true` | Entra ID authentication will be used to authenticate to the Storage Account. |
 
 #### Azure
-1. Go to your Azure Subscription and make sure to give your newly created Identity `Storage Blob Data Owner` role on the storage account that was created by the bicep deployment.
+1. Go to your Azure Subscription and make sure to give your Azure DevOps Service Connection `Storage Blob Data Owner` role on the storage account that was created by the bicep deployment.
 
 ### Running the tests
 
