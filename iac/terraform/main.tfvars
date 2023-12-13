@@ -1,4 +1,4 @@
-resource_group_name = "festive-tech-calendar-2023-tf-test"
+resource_group_name = "terraform-test-rg"
 location = "westeurope"
 tags = {
     "environment" = "terraform-infra"
